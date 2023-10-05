@@ -1,7 +1,9 @@
+import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+
 
 void main() {
   runApp(MyApp());
@@ -12,7 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Radio Wave Intensity',
-      home: MyHomePage(),
+      home: MyHomePage()
     );
   }
 }
@@ -23,6 +25,111 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  List<Map<String, dynamic>> data = []; // List to store the decoded JSON data
+  final String url = 'http://monitor.yss.su:8000/json';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Dashboard')
+      ),
+      body: ListView.builder(
+        itemCount: data.length,
+        itemBuilder: (context, index) {
+          final data = globalData[index];
+          final id = data['id'];
+          final amplitude = data['amplitude'];
+          final frequency = data['frequency'];
+          final datetime = data['date'] data['time'];
+
+          return ListTile(
+            title: Text('ID: $id'),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Amplitude: $amplitude'),
+                Text('Frequency: $frequency'),
+                Text('Time: $time'),
+                Text('Date: $date'),
+              ]
+            ),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => RequestScreen(
+                    url: url,
+                    amplitude: amplitude,
+                    id: id,
+                    frequency: frequency)
+                    );
+                  }
+                )
+              );
+            }
+          }
+        )
+      )
+    )
+  }
+}
+
+
+  void fetchData() {
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        print(jsonData);
+      } else {
+        print('Failed to load data. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+
+    List<Map<String, dynamic>> decodedData =
+    List<Map<String, dynamic>>.from(json.decode(jsonData));
+    setState(() {
+      data = decodedData;
+    }
+  }
+}
+
+class RequestScreen extends StatelessWidget {
+  final String url;
+  final double amplitude;
+  final int id;
+  final double frequency;
+
+  RequestScreen({
+    required this.url,
+    required this.amplitude,
+    required this.id,
+    required this.frequency
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final requestText = 'Requesting URL http://$url/$amplitude/$id/$frequency';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Request Details'),
+      ),
+      body: Center(
+        child: Text(requestText),
+      )
+    );
+  }
+
+class _MyGraphPage extends State<MyGraphPage> {
   List<Map<String, dynamic>> data = []; // List to store the decoded JSON data
 
   @override
