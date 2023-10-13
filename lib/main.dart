@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-
 void main() {
   runApp(MyApp());
 }
@@ -23,9 +22,8 @@ class MyHomePage extends StatefulWidget {
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
-
+List<Map<String, dynamic>> data = []; // List to store the decoded JSON data
 class _MyHomePageState extends State<MyHomePage> {
-  List<Map<String, dynamic>> data = []; // List to store the decoded JSON data
   final String url = 'http://monitor.yss.su:8000/json';
 
   @override
@@ -38,16 +36,16 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dashboard')
+        title: Text('Dashboard'),
       ),
       body: ListView.builder(
         itemCount: data.length,
         itemBuilder: (context, index) {
-          final data = globalData[index];
-          final id = data['id'];
-          final amplitude = data['amplitude'];
-          final frequency = data['frequency'];
-          final datetime = data['date'] data['time'];
+          final data_temp = data[index];
+          final id = data_temp['id'];
+          final amplitude = data_temp['amplitude'];
+          final frequency = data_temp['frequency'];
+          final datetime = data_temp['date'] + data_temp['time'];
 
           return ListTile(
             title: Text('ID: $id'),
@@ -56,49 +54,63 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 Text('Amplitude: $amplitude'),
                 Text('Frequency: $frequency'),
-                Text('Time: $time'),
-                Text('Date: $date'),
-              ]
+                Text('Datetime: $datetime'),
+                // Assuming 'time' is defined somewhere
+              ],
             ),
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => RequestScreen(
-                    url: url,
-                    amplitude: amplitude,
-                    id: id,
-                    frequency: frequency)
-                    );
-                  }
-                )
+                  builder: (context) =>
+                      RequestScreen(
+                        url: url,
+                        amplitude: amplitude,
+                        id: id,
+                        frequency: frequency,
+                      ),
+                ),
               );
-            }
-          }
-        )
-      )
-    )
+            },
+          );
+        },
+      ),
+    );
   }
-}
 
 
   void fetchData() {
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        print(jsonData);
-      } else {
-        print('Failed to load data. Status code: ${response.statusCode}');
+    String jsondata = '''
+      {
+    "data": [
+      {
+        "id": 1,
+        "amplitude": 10,
+        "frequency": 100,
+        "time": "09:30:45",
+        "date": "2023-09-21"
+      },
+      {
+        "id": 2,
+        "amplitude": 15,
+        "frequency": 120,
+        "time": "10:15:22",
+        "date": "2023-09-21"
+      },
+      {
+        "id": 3,
+        "amplitude": 8,
+        "frequency": 80,
+        "time": "14:45:10",
+        "date": "2023-09-22"
       }
-    } catch (e) {
-      print('Error: $e');
-    }
-
+    ]
+  }
+    ''';
     List<Map<String, dynamic>> decodedData =
-    List<Map<String, dynamic>>.from(json.decode(jsonData));
+        List<Map<String, dynamic>>.from(json.decode(jsondata));
     setState(() {
       data = decodedData;
-    }
+    });
   }
 }
 
@@ -128,71 +140,72 @@ class RequestScreen extends StatelessWidget {
       )
     );
   }
-
-class _MyGraphPage extends State<MyGraphPage> {
-  List<Map<String, dynamic>> data = []; // List to store the decoded JSON data
-
-  @override
-  void initState() {
-    super.initState();
-    fetchData();
   }
 
-  void fetchData() {
-    // Simulate fetching JSON data
-    String jsonData = '''
-      "data": [
-        {"time": "2023-09-21 08:00:00", "intensity": 75.5},
-        {"time": "2023-09-21 08:15:00", "intensity": 80.2},
-        {"time": "2023-09-21 08:30:00", "intensity": 85.1},
-        {"time": "2023-09-21 08:45:00", "intensity": 79.8},
-        {"time": "2023-09-21 09:00:00", "intensity": 82.3},
-        {"time": "2023-09-21 09:15:00", "intensity": 77.6}
-      ]
-    ''';
-    String jsonMain = '''
-      {
-    "data": [
-      {
-        "id": 1,
-        "amplitude": 10,
-        "frequency": 100,
-        "time": "09:30:45",
-        "date": "2023-09-21"
-      },
-      {
-        "id": 2,
-        "amplitude": 15,
-        "frequency": 120,
-        "time": "10:15:22",
-        "date": "2023-09-21"
-      },
-      {
-        "id": 3,
-        "amplitude": 8,
-        "frequency": 80,
-        "time": "14:45:10",
-        "date": "2023-09-22"
-      }
-    ]
-  }
-    ''';
-    String jsonAmplitude = '''
-      "data": [
-        {"time": "2023-09-21 08:00:00", "amplitude": 75.5},
-        {"time": "2023-09-21 08:15:00", "amplitude": 80.2},
-        {"time": "2023-09-21 08:30:00", "amplitude": 85.1},
-        {"time": "2023-09-21 08:45:00", "amplitude": 79.8},
-        {"time": "2023-09-21 09:00:00", "amplitude": 82.3},
-        {"time": "2023-09-21 09:15:00", "amplitude": 77.6}
-      ]
-    ''';
-    List<Map<String, dynamic>> decodedData =
-        List<Map<String, dynamic>>.from(json.decode(jsonData));
-    setState(() {
-      data = decodedData;
-    });
-  }
+// class _MyGraphPage extends State<MyGraphPage> {
+//   List<Map<String, dynamic>> data = []; // List to store the decoded JSON data
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//     fetchData();
+//   }
+//
+//   void fetchData() {
+//     // Simulate fetching JSON data
+//     String jsonData = '''
+//       "data": [
+//         {"time": "2023-09-21 08:00:00", "intensity": 75.5},
+//         {"time": "2023-09-21 08:15:00", "intensity": 80.2},
+//         {"time": "2023-09-21 08:30:00", "intensity": 85.1},
+//         {"time": "2023-09-21 08:45:00", "intensity": 79.8},
+//         {"time": "2023-09-21 09:00:00", "intensity": 82.3},
+//         {"time": "2023-09-21 09:15:00", "intensity": 77.6}
+//       ]
+//     ''';
+//     String jsonMain = '''
+//       {
+//     "data": [
+//       {
+//         "id": 1,
+//         "amplitude": 10,
+//         "frequency": 100,
+//         "time": "09:30:45",
+//         "date": "2023-09-21"
+//       },
+//       {
+//         "id": 2,
+//         "amplitude": 15,
+//         "frequency": 120,
+//         "time": "10:15:22",
+//         "date": "2023-09-21"
+//       },
+//       {
+//         "id": 3,
+//         "amplitude": 8,
+//         "frequency": 80,
+//         "time": "14:45:10",
+//         "date": "2023-09-22"
+//       }
+//     ]
+//   }
+//     ''';
+//     String jsonAmplitude = '''
+//       "data": [
+//         {"time": "2023-09-21 08:00:00", "amplitude": 75.5},
+//         {"time": "2023-09-21 08:15:00", "amplitude": 80.2},
+//         {"time": "2023-09-21 08:30:00", "amplitude": 85.1},
+//         {"time": "2023-09-21 08:45:00", "amplitude": 79.8},
+//         {"time": "2023-09-21 09:00:00", "amplitude": 82.3},
+//         {"time": "2023-09-21 09:15:00", "amplitude": 77.6}
+//       ]
+//     ''';
+//     List<Map<String, dynamic>> decodedData =
+//         List<Map<String, dynamic>>.from(json.decode(jsonData));
+//     setState(() {
+//       data = decodedData;
+//     });
+//   }
 
   @override
   Widget build(BuildContext context) {
@@ -260,4 +273,4 @@ class _MyGraphPage extends State<MyGraphPage> {
       ),
     );
   }
-}
+
