@@ -52,7 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
           final id = data['id'];
           final amplitude = data['amplitude'];
           final frequency = data['frequency'];
-          final datetime = data['date'] + data['time'];
+          final datetime = data['date'] + " " + data['time'];
 
           return ListTile(
             title: Text('ID: $id'),
