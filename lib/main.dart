@@ -38,36 +38,27 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    // fetchData();
-    final websiteUrl = 'http://monitor.yss.su:8000/json'; // Replace with the actual website URL
-    final webSocketPath = 'socket'; // Replace with the actual WebSocket path
-    fetchDataFromWebSocket(websiteUrl, webSocketPath);
+    fetchDataAndUpdateGlobalData();
   }
 
-  Future<void> fetchDataFromWebSocket(String websiteUrl, String webSocketPath) async {
-    // Step 1: Fetch the WebSocket endpoint URL from the website
-    final response = await http.get(Uri.parse(websiteUrl));
+  Future<void> fetchDataAndUpdateGlobalData() async {
+    final url = Uri.parse('http://monitor.yss.su:8000/json');
 
-    if (response.statusCode == 200) {
-      final webSocketUrl = json.decode(response.body)['websocket_url'];
+    try {
+      final response = await http.get(url);
 
-      // Step 2: Connect to the WebSocket
-      final channel = WebSocketChannel.connect(Uri.parse('ws://$webSocketUrl/$webSocketPath'));
-
-      // Step 3: Listen for incoming messages
-      channel.stream.listen((message) {
-        // Handle incoming JSON data here
-        final jsonData = json.decode(message);
-        print(jsonData);
-      });
-
-      // Step 4: Send a message (if needed)
-      // channel.sink.add(json.encode({'key': 'value'}));
-
-      // Step 5: Close the WebSocket connection when done
-      // channel.sink.close();
-    } else {
-      print('Failed to fetch the WebSocket URL');
+      if (response.statusCode == 200) {
+        Map<String, dynamic> parsedJson = json.decode(response.body);
+        List<Map<String, dynamic>> data = List<Map<String, dynamic>>.from(parsedJson['data']);
+        setState(() {
+              globalData = data;
+            });
+        print(globalData);
+      } else {
+        print('Failed to fetch data: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error: $error');
     }
   }
 
@@ -82,8 +73,8 @@ class _MyHomePageState extends State<MyHomePage> {
         itemBuilder: (context, index) {
           final data = globalData[index];
           final id = data['id'];
-          final amplitude = data['amplitude'];
-          final frequency = data['frequency'];
+          final amplitude = data['power'];
+          final frequency = data['freq'];
           final datetime = data['date'] + " " + data['time'];
 
           return ListTile(
