@@ -4,7 +4,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,7 +38,37 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    fetchData();
+    // fetchData();
+    final websiteUrl = 'http://monitor.yss.su:8000/json'; // Replace with the actual website URL
+    final webSocketPath = 'socket'; // Replace with the actual WebSocket path
+    fetchDataFromWebSocket(websiteUrl, webSocketPath);
+  }
+
+  Future<void> fetchDataFromWebSocket(String websiteUrl, String webSocketPath) async {
+    // Step 1: Fetch the WebSocket endpoint URL from the website
+    final response = await http.get(Uri.parse(websiteUrl));
+
+    if (response.statusCode == 200) {
+      final webSocketUrl = json.decode(response.body)['websocket_url'];
+
+      // Step 2: Connect to the WebSocket
+      final channel = WebSocketChannel.connect(Uri.parse('ws://$webSocketUrl/$webSocketPath'));
+
+      // Step 3: Listen for incoming messages
+      channel.stream.listen((message) {
+        // Handle incoming JSON data here
+        final jsonData = json.decode(message);
+        print(jsonData);
+      });
+
+      // Step 4: Send a message (if needed)
+      // channel.sink.add(json.encode({'key': 'value'}));
+
+      // Step 5: Close the WebSocket connection when done
+      // channel.sink.close();
+    } else {
+      print('Failed to fetch the WebSocket URL');
+    }
   }
 
   @override
@@ -102,43 +134,43 @@ class _MyHomePageState extends State<MyHomePage> {
   //     }
   //   }
 
-  void fetchData() {
-    // Simulate fetching JSON data
-    String jsonMain = '''
-  {
-    "data": [
-      {
-        "id": 1,
-        "amplitude": 10,
-        "frequency": 100,
-        "time": "09:30:45",
-        "date": "2023-09-21"
-      },
-      {
-        "id": 2,
-        "amplitude": 15,
-        "frequency": 120,
-        "time": "10:15:22",
-        "date": "2023-09-21"
-      },
-      {
-        "id": 3,
-        "amplitude": 8,
-        "frequency": 80,
-        "time": "14:45:10",
-        "date": "2023-09-22"
-      }
-    ]
-  }
-  ''';
-
-    Map<String, dynamic> parsedJson = json.decode(jsonMain);
-    List<Map<String, dynamic>> data = List<Map<String, dynamic>>.from(parsedJson['data']);
-
-    setState(() {
-      globalData = data;
-    });
-  }
+  // void fetchData() {
+  //   // Simulate fetching JSON data
+  //   String jsonMain = '''
+  // {
+  //   "data": [
+  //     {
+  //       "id": 1,
+  //       "amplitude": 10,
+  //       "frequency": 100,
+  //       "time": "09:30:45",
+  //       "date": "2023-09-21"
+  //     },
+  //     {
+  //       "id": 2,
+  //       "amplitude": 15,
+  //       "frequency": 120,
+  //       "time": "10:15:22",
+  //       "date": "2023-09-21"
+  //     },
+  //     {
+  //       "id": 3,
+  //       "amplitude": 8,
+  //       "frequency": 80,
+  //       "time": "14:45:10",
+  //       "date": "2023-09-22"
+  //     }
+  //   ]
+  // }
+  // ''';
+  //
+  //   Map<String, dynamic> parsedJson = json.decode(jsonMain);
+  //   List<Map<String, dynamic>> data = List<Map<String, dynamic>>.from(parsedJson['data']);
+  //
+  //   setState(() {
+  //     globalData = data;
+  //   });
+  // }
 }
 
 class RequestScreen extends StatelessWidget {
@@ -175,64 +207,65 @@ class _MyGraphPage extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    fetchData();
+
+    // fetchData();
   }
 
-  void fetchData() {
-    // Simulate fetching JSON data
-    String jsonData = '''
-      "data": [
-        {"time": "2023-09-21 08:00:00", "intensity": 75.5},
-        {"time": "2023-09-21 08:15:00", "intensity": 80.2},
-        {"time": "2023-09-21 08:30:00", "intensity": 85.1},
-        {"time": "2023-09-21 08:45:00", "intensity": 79.8},
-        {"time": "2023-09-21 09:00:00", "intensity": 82.3},
-        {"time": "2023-09-21 09:15:00", "intensity": 77.6}
-      ]
-    ''';
-    String jsonMain = '''
-      {
-    "data": [
-      {
-        "id": 1,
-        "amplitude": 10,
-        "frequency": 100,
-        "time": "09:30:45",
-        "date": "2023-09-21"
-      },
-      {
-        "id": 2,
-        "amplitude": 15,
-        "frequency": 120,
-        "time": "10:15:22",
-        "date": "2023-09-21"
-      },
-      {
-        "id": 3,
-        "amplitude": 8,
-        "frequency": 80,
-        "time": "14:45:10",
-        "date": "2023-09-22"
-      }
-    ]
-  }
-    ''';
-    String jsonAmplitude = '''
-      "data": [
-        {"time": "2023-09-21 08:00:00", "amplitude": 75.5},
-        {"time": "2023-09-21 08:15:00", "amplitude": 80.2},
-        {"time": "2023-09-21 08:30:00", "amplitude": 85.1},
-        {"time": "2023-09-21 08:45:00", "amplitude": 79.8},
-        {"time": "2023-09-21 09:00:00", "amplitude": 82.3},
-        {"time": "2023-09-21 09:15:00", "amplitude": 77.6}
-      ]
-    ''';
-    List<Map<String, dynamic>> decodedData =
-        List<Map<String, dynamic>>.from(json.decode(jsonData));
-    setState(() {
-      data = decodedData;
-    });
-  }
+  // void fetchData() {
+  //   // Simulate fetching JSON data
+  //   String jsonData = '''
+  //     "data": [
+  //       {"time": "2023-09-21 08:00:00", "intensity": 75.5},
+  //       {"time": "2023-09-21 08:15:00", "intensity": 80.2},
+  //       {"time": "2023-09-21 08:30:00", "intensity": 85.1},
+  //       {"time": "2023-09-21 08:45:00", "intensity": 79.8},
+  //       {"time": "2023-09-21 09:00:00", "intensity": 82.3},
+  //       {"time": "2023-09-21 09:15:00", "intensity": 77.6}
+  //     ]
+  //   ''';
+  //   String jsonMain = '''
+  //     {
+  //   "data": [
+  //     {
+  //       "id": 1,
+  //       "amplitude": 10,
+  //       "frequency": 100,
+  //       "time": "09:30:45",
+  //       "date": "2023-09-21"
+  //     },
+  //     {
+  //       "id": 2,
+  //       "amplitude": 15,
+  //       "frequency": 120,
+  //       "time": "10:15:22",
+  //       "date": "2023-09-21"
+  //     },
+  //     {
+  //       "id": 3,
+  //       "amplitude": 8,
+  //       "frequency": 80,
+  //       "time": "14:45:10",
+  //       "date": "2023-09-22"
+  //     }
+  //   ]
+  // }
+  //   ''';
+  //   String jsonAmplitude = '''
+  //     "data": [
+  //       {"time": "2023-09-21 08:00:00", "amplitude": 75.5},
+  //       {"time": "2023-09-21 08:15:00", "amplitude": 80.2},
+  //       {"time": "2023-09-21 08:30:00", "amplitude": 85.1},
+  //       {"time": "2023-09-21 08:45:00", "amplitude": 79.8},
+  //       {"time": "2023-09-21 09:00:00", "amplitude": 82.3},
+  //       {"time": "2023-09-21 09:15:00", "amplitude": 77.6}
+  //     ]
+  //   ''';
+  //   List<Map<String, dynamic>> decodedData =
+  //       List<Map<String, dynamic>>.from(json.decode(jsonData));
+  //   setState(() {
+  //     data = decodedData;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
