@@ -38,33 +38,71 @@ class _MyHomePageState extends State<MyHomePage> {
     fetchDataAndUpdateGlobalData();
   }
 
-  Future<void> fetchDataAndUpdateGlobalData() async {
-    final url = Uri.parse('http://monitor.yss.su:8000/json');
-
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        Map<String, dynamic> parsedJson = json.decode(response.body);
-        List<Map<String, dynamic>> data =
-        List<Map<String, dynamic>>.from(parsedJson['data']);
-        setState(() {
-          globalData = data;
-        });
-        if (kDebugMode) {
-          print(globalData);
-        }
-      } else {
-        if (kDebugMode) {
-          print('Failed to fetch data: ${response.statusCode}');
-        }
+  void fetchDataAndUpdateGlobalData() {
+    // Simulate fetching JSON data
+    String jsonMain = '''
+  {
+    "data": [
+      {
+        "location": 1,
+        "power": 10,
+        "freq": 100,
+        "time": "09:30:45",
+        "date": "2023-09-21"
+      },
+      {
+        "location": 2,
+        "power": 15,
+        "freq": 120,
+        "time": "10:15:22",
+        "date": "2023-09-21"
+      },
+      {
+        "location": 3,
+        "power": 8,
+        "freq": 80,
+        "time": "14:45:10",
+        "date": "2023-09-22"
       }
-    } catch (error) {
-      if (kDebugMode) {
-        print('Error: $error');
-      }
-    }
+    ]
   }
+  ''';
+
+    Map<String, dynamic> parsedJson = json.decode(jsonMain);
+    List<Map<String, dynamic>> data = List<Map<String, dynamic>>.from(parsedJson['data']);
+
+    setState(() {
+      globalData = data;
+    });
+  }
+
+  // Future<void> fetchDataAndUpdateGlobalData() async {
+  //   final url = Uri.parse('http://monitor.yss.su:8000/json');
+  //
+  //   try {
+  //     final response = await http.get(url);
+  //
+  //     if (response.statusCode == 200) {
+  //       Map<String, dynamic> parsedJson = json.decode(response.body);
+  //       List<Map<String, dynamic>> data =
+  //       List<Map<String, dynamic>>.from(parsedJson['data']);
+  //       setState(() {
+  //         globalData = data;
+  //       });
+  //       if (kDebugMode) {
+  //         print(globalData);
+  //       }
+  //     } else {
+  //       if (kDebugMode) {
+  //         print('Failed to fetch data: ${response.statusCode}');
+  //       }
+  //     }
+  //   } catch (error) {
+  //     if (kDebugMode) {
+  //       print('Error: $error');
+  //     }
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
