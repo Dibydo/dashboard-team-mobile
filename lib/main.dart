@@ -38,6 +38,7 @@ class _MyHomePageState extends State<MyHomePage> {
     fetchDataAndUpdateGlobalData();
   }
 
+
   Future<void> fetchDataAndUpdateGlobalData() async {
     final url = Uri.parse('http://monitor.yss.su:8000/json');
 
@@ -47,16 +48,22 @@ class _MyHomePageState extends State<MyHomePage> {
       if (response.statusCode == 200) {
         Map<String, dynamic> parsedJson = json.decode(response.body);
         List<Map<String, dynamic>> data =
-            List<Map<String, dynamic>>.from(parsedJson['data']);
+        List<Map<String, dynamic>>.from(parsedJson['data']);
         setState(() {
           globalData = data;
         });
-        print(globalData);
+        if (kDebugMode) {
+          print(globalData);
+        }
       } else {
-        print('Failed to fetch data: ${response.statusCode}');
+        if (kDebugMode) {
+          print('Failed to fetch data: ${response.statusCode}');
+        }
       }
     } catch (error) {
-      print('Error: $error');
+      if (kDebugMode) {
+        print('Error: $error');
+      }
     }
   }
 
@@ -119,35 +126,41 @@ class _MyGraphPage extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: LineChart(
           LineChartData(
-            gridData: FlGridData(show: false),
+            gridData: const FlGridData(show: false),
             titlesData: FlTitlesData(
-              leftTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30, // Adjust this value for label spacing
-                interval: 20, // Adjust this value based on your intensity range
-                getTitles: (value) {
-                  return value
-                      .toInt()
-                      .toString(); // Customize label format as needed
-                },
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 30, // Adjust this value for label spacing
+                  interval: 20, // Adjust this value based on your intensity range
+                  getTitlesWidget: (value, meta) {
+                    return Text(value
+                        .toInt()
+                        .toString()); // Customize label format as needed
+                  },
+                ),
               ),
-              bottomTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30, // Adjust this value for label spacing
-                interval: 1, // Adjust this value based on your data frequency
-                getTitles: (value) {
-                  // Convert value (index) to corresponding time from data
-                  if (value >= 0 && value < data.length) {
-                    final time = data[value.toInt()]["time"] as String;
-                    return time.substring(
-                        11, 16); // Display time in HH:mm format
-                  }
-                  return '';
-                },
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30, // Adjust this value for label spacing
+                    interval: 1, // Adjust this value based on your data frequency
+                    getTitlesWidget: (value, meta) {
+                      // Convert value (index) to corresponding time from data
+                      if (value >= 0 && value < data.length) {
+                        final time = data[value.toInt()]["time"] as String;
+                        return Text(time.substring(
+                            11, 16)); // Display time in HH:mm format
+                      }
+                      return const Text('');
+                    },
+                  ),
+                ),
+                topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)), // Hide top titles
+                rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)), // Hide right titles
               ),
-              topTitles: SideTitles(showTitles: false), // Hide top titles
-              rightTitles: SideTitles(showTitles: false), // Hide right titles
-            ),
             borderData: FlBorderData(
               show: true,
               border: Border.all(color: const Color(0xff37434d), width: 1),
@@ -165,8 +178,8 @@ class _MyGraphPage extends StatelessWidget {
                   return FlSpot(index.toDouble(), intensity);
                 }).toList(),
                 isCurved: true,
-                colors: [Colors.blue],
-                dotData: FlDotData(show: false),
+                color: Colors.blue,
+                dotData: const FlDotData(show: false),
                 belowBarData: BarAreaData(show: false),
               ),
             ],
@@ -185,10 +198,10 @@ class RequestScreen extends StatelessWidget {
 
   const RequestScreen(
       {super.key,
-      required this.url,
-      required this.amplitude,
-      required this.id,
-      required this.frequency});
+        required this.url,
+        required this.amplitude,
+        required this.id,
+        required this.frequency});
 
   @override
   Widget build(BuildContext context) {
