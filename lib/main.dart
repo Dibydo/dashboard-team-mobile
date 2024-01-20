@@ -9,7 +9,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:intl/intl.dart';
 class Tuple {
   late List<DateTime> datetime;
   late List<double> power;
@@ -24,7 +24,6 @@ class Tuple {
     power = sortedIndices.map((index) => power[index]).toList();
   }
 }
-
 
 void main() {
   runApp(const MyApp());
@@ -47,7 +46,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   // SharedPreferences key constants
   static const String cityNameKey = 'cityName';
   static const String freqKey = 'freq';
@@ -125,7 +123,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (response.statusCode == 200) {
       Map<String, dynamic> parsedJson = json.decode(response.body);
-      List<Map<String, dynamic>> data = List<Map<String, dynamic>>.from(parsedJson['data']);
+      List<Map<String, dynamic>> data =
+          List<Map<String, dynamic>>.from(parsedJson['data']);
       Tuple extractedData = extractGraphingData(data);
       extractedData.sort();
       return extractedData;
@@ -151,8 +150,6 @@ class _MyHomePageState extends State<MyHomePage> {
     return Tuple(dateTimeList, powerList);
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,20 +170,37 @@ class _MyHomePageState extends State<MyHomePage> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {
-                      if (cityName.isNotEmpty && !(freq.isNaN) && (all || amount.isNotEmpty)) {
+                      if (cityName.isNotEmpty &&
+                          !(freq.isNaN) &&
+                          (all || amount.isNotEmpty)) {
                         if (kDebugMode) {
                           print('All conditions met. Sending request.');
                         }
-                        String urlStart = 'http://monitor.yss.su:8000/json/Monitor_id1/';
-                        String url = '$urlStart$cityName/all/${freq.toString()}/${(amount.isEmpty ? "all" : amount.toString())}';
+                        String urlStart =
+                            'http://monitor.yss.su:8000/json/Monitor_id1/';
+                        String url =
+                            '$urlStart$cityName/all/${freq.toString()}/${(amount.isEmpty ? "all" : amount.toString())}';
+                        print(url);
                         Tuple data = await fetchData(url);
                         if (kDebugMode) {
                           for (int i = 0; i < data.power.length; i++) {
-                            print("$i: ${data.datetime[i]} --- ${data.power[i]}");
+                            print(
+                                "$i: ${data.datetime[i]} --- ${data.power[i]}");
                           }
                         }
                         // TODO go to graph page and plot graph
                         // keep Tuple data and maybe cityName, freq, amount for display
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GraphPage(
+                              datetime: data.datetime,
+                              power: data.power,
+                              cityName: cityName,
+                              freq: freq,
+                            ),
+                          ),
+                        );
                       } else {
                         if (kDebugMode) {
                           print('Some required fields are missing.');
@@ -210,7 +224,6 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
-
 
   Widget buildCityInput(FocusNode focusNode) {
     return TextField(
@@ -306,37 +319,147 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+class GraphPage extends StatelessWidget {
+  final List<DateTime> datetime;
+  final List<double> power;
+  final String cityName;
+  final double freq;
 
-  // ниже пережитки прошлой версии дашборда
+  GraphPage({
+    required this.datetime,
+    required this.power,
+    required this.cityName,
+    required this.freq,
+  });
 
-  // Future<void> fetchDataAndUpdateGlobalData() async {
-  //   final url = Uri.parse('http://monitor.yss.su:8000/json');
-  //
-  //   try {
-  //     final response = await http.get(url);
-  //
-  //     if (response.statusCode == 200) {
-  //       Map<String, dynamic> parsedJson = json.decode(response.body);
-  //       List<Map<String, dynamic>> data =
-  //       List<Map<String, dynamic>>.from(parsedJson['data']);
-  //       setState(() {
-  //         globalData = data;
-  //       });
-  //       if (kDebugMode) {
-  //         print(globalData);
-  //       }
-  //     } else {
-  //       if (kDebugMode) {
-  //         print('Failed to fetch data: ${response.statusCode}');
-  //       }
-  //     }
-  //   } catch (error) {
-  //     if (kDebugMode) {
-  //       print('Error: $error');
-  //     }
-  //   }
-  // }
-  // }
+  @override
+  Widget build(BuildContext context) {
+    double minValue =
+    power.reduce((value, element) => value < element ? value : element);
+    double maxValue =
+    power.reduce((value, element) => value > element ? value : element);
+
+    return Scaffold(
+      appBar: AppBar(title: Text('Graph Page - $cityName - Freq: $freq')),
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: LineChart(
+          LineChartData(
+            gridData: FlGridData(show: false),
+            titlesData: FlTitlesData(
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 45,
+                  interval: (maxValue - minValue) / 5,
+                  getTitlesWidget: (value, meta) {
+                    return Text(value.toStringAsFixed(2));
+                  },
+                ),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 30,
+                  interval: (datetime.length.toDouble() - 1) / 5,
+                  getTitlesWidget: (value, meta) {
+                    int index = value.toInt();
+                    if (index >= 0 && index < datetime.length) {
+                      final DateFormat formatter = DateFormat('Hms');
+                      return Padding(
+                        padding: EdgeInsets.all(7.0),
+                        child: Text(formatter.format(datetime[index])),
+                      );
+                    }
+                    return Text('lobotomy');
+                  },
+                ),
+              ),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            borderData: FlBorderData(
+              show: true,
+              border: Border.all(color: const Color(0xff37434d), width: 1),
+            ),
+            minX: 0,
+            maxX: datetime.length.toDouble() - 1,
+            minY: minValue < 0 ? minValue - 5 : 0,
+            maxY: maxValue > 0 ? maxValue : 0,
+            lineBarsData: [
+              LineChartBarData(
+                spots: List.generate(datetime.length, (index) {
+                  return FlSpot(index.toDouble(), power[index]);
+                }),
+                isCurved: false,
+                color: Colors.blue,
+                dotData: FlDotData(show: false),
+                belowBarData: BarAreaData(show: false),
+              ),
+            ],
+            lineTouchData: LineTouchData(
+              touchTooltipData: LineTouchTooltipData(
+                tooltipBgColor: Colors.blueAccent,
+                getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                  return touchedBarSpots.map((barSpot) {
+                    final int index = barSpot.x.toInt(); // Use x value as index
+                    if (index >= 0 && index < datetime.length) {
+                      final DateTime touchedTime = datetime[index];
+                      final double touchedPower = power[index];
+
+                      final DateFormat timeFormatter = DateFormat('y-MM-d; H:m:s');
+                      final String formattedTime = timeFormatter.format(touchedTime);
+
+                      return LineTooltipItem(
+                        'Date: $formattedTime\nPower: ${touchedPower.toStringAsFixed(2)}',
+                        TextStyle(color: Colors.white),
+                      );
+                    }
+                    return LineTooltipItem('Invalid Data', TextStyle(color: Colors.white));
+                  }).toList();
+                },
+              ),
+              handleBuiltInTouches: true,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+// ниже пережитки прошлой версии дашборда
+
+// Future<void> fetchDataAndUpdateGlobalData() async {
+//   final url = Uri.parse('http://monitor.yss.su:8000/json');
+//
+//   try {
+//     final response = await http.get(url);
+//
+//     if (response.statusCode == 200) {
+//       Map<String, dynamic> parsedJson = json.decode(response.body);
+//       List<Map<String, dynamic>> data =
+//       List<Map<String, dynamic>>.from(parsedJson['data']);
+//       setState(() {
+//         globalData = data;
+//       });
+//       if (kDebugMode) {
+//         print(globalData);
+//       }
+//     } else {
+//       if (kDebugMode) {
+//         print('Failed to fetch data: ${response.statusCode}');
+//       }
+//     }
+//   } catch (error) {
+//     if (kDebugMode) {
+//       print('Error: $error');
+//     }
+//   }
+// }
+// }
 
 // class _MyGraphPage extends StatelessWidget {
 //   final Random random = Random();
@@ -374,7 +497,7 @@ class _MyHomePageState extends State<MyHomePage> {
 //                   getTitlesWidget: (value, meta) {
 //                     return Text(value
 //                         .toInt()
-//                         .toString()); // Customize label format as needed
+//                         .toString()); // Lobotomize label format as needed
 //                   },
 //                 ),
 //               ),
